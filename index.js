@@ -40,34 +40,45 @@ app.get("/webhook", (req, res) => {
 // RECEPTION ET REPONSE MESSAGE
 // --------------------
 app.post("/webhook", async (req, res) => {
+  console.log("📬 Webhook payload reçu :", JSON.stringify(req.body, null, 2));
+
   const message = req.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
 
-  if (message) {
-    const from = message.from;
-    const text = message.text?.body || "";
+  if (!message) {
+    console.log("⚠️ Aucun message détecté dans le payload");
+    return res.sendStatus(200);
+  }
 
-    console.log(`📩 Message reçu de ${from}: ${text}`);
+  const from = message.from;
+  const text = message.text?.body || "";
 
-    try {
-      // Réponse automatique
-      await axios.post(
-        `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
-        {
-          messaging_product: "whatsapp",
-          to: from,
-          text: { body: `Tu as dit: ${text}` }, // Répète le message
+  console.log(`📩 Message reçu de ${from}: "${text}"`);
+
+  try {
+    const response = await axios.post(
+      `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
+      {
+        messaging_product: "whatsapp",
+        to: from,
+        text: { body: `Tu as dit: ${text}` },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${TOKEN}`,
+          "Content-Type": "application/json",
         },
-        {
-          headers: {
-            Authorization: `Bearer ${TOKEN}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      }
+    );
 
-      console.log(`✅ Réponse envoyée à ${from}`);
-    } catch (error) {
-      console.error("❌ Erreur en envoyant le message:", error.response?.data || error.message);
+    console.log("✅ Message envoyé avec succès !");
+    console.log("💬 Réponse API :", JSON.stringify(response.data, null, 2));
+  } catch (error) {
+    console.error("❌ Erreur lors de l'envoi du message !");
+    if (error.response) {
+      console.error("Status:", error.response.status);
+      console.error("Data:", JSON.stringify(error.response.data, null, 2));
+    } else {
+      console.error("Erreur:", error.message);
     }
   }
 
