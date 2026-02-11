@@ -40,37 +40,10 @@ app.get("/webhook", (req, res) => {
 // RECEPTION MESSAGE
 // --------------------
 app.post("/webhook", async (req, res) => {
-  const message = req.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
-
-  if (message) {
-    const from = message.from;
-    const text = message.text?.body || "";
-
-    console.log(`📩 Message reçu de ${from}: ${text}`);
-
-    try {
-      await axios.post(
-        `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
-        {
-          messaging_product: "whatsapp",
-          to: from,
-          text: { body: `Tu as dit: ${text}` },
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${TOKEN}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      console.log(`✅ Réponse envoyée à ${from}`);
-    } catch (error) {
-      console.error("❌ Erreur en envoyant le message:", error.response?.data || error.message);
-    }
-  }
-
+  console.log("📬 Webhook payload:", JSON.stringify(req.body, null, 2));
   res.sendStatus(200);
 });
+
 
 // --------------------
 // LANCEMENT SERVEUR
