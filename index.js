@@ -37,13 +37,42 @@ app.get("/webhook", (req, res) => {
 });
 
 // --------------------
-// RECEPTION MESSAGE
+// RECEPTION ET REPONSE MESSAGE
 // --------------------
 app.post("/webhook", async (req, res) => {
-  console.log("📬 Webhook payload:", JSON.stringify(req.body, null, 2));
+  const message = req.body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+
+  if (message) {
+    const from = message.from;
+    const text = message.text?.body || "";
+
+    console.log(`📩 Message reçu de ${from}: ${text}`);
+
+    try {
+      // Réponse automatique
+      await axios.post(
+        `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
+        {
+          messaging_product: "whatsapp",
+          to: from,
+          text: { body: `Tu as dit: ${text}` }, // Répète le message
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${TOKEN}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log(`✅ Réponse envoyée à ${from}`);
+    } catch (error) {
+      console.error("❌ Erreur en envoyant le message:", error.response?.data || error.message);
+    }
+  }
+
   res.sendStatus(200);
 });
-
 
 // --------------------
 // LANCEMENT SERVEUR
